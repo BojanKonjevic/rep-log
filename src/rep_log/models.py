@@ -12,7 +12,7 @@ from sqlalchemy import (
     Uuid,
     func,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from rep_log.database import Base, BaseModel
 
@@ -40,19 +40,41 @@ class WorkoutExercise(BaseModel):
     )
     order: Mapped[int] = mapped_column(Integer)
 
+    workout: Mapped["Workout"] = relationship(back_populates="exercises")
+    exercise: Mapped["Exercise"] = relationship(back_populates="workout_exercises")
+    sets: Mapped[list["Set"]] = relationship(
+        back_populates="workout_exercise",
+        cascade="all, delete-orphan",
+        order_by="Set.set_number",
+    )
+
 
 class Exercise(BaseModel):
     __tablename__ = "exercises"
     name: Mapped[str] = mapped_column(String(255), index=True, unique=True)
+    workout_exercises: Mapped[list["WorkoutExercise"]] = relationship(
+        back_populates="exercise"
+    )
+    muscle_groups: Mapped[list["MuscleGroup"]] = relationship(
+        secondary=exercise_muscle_group, back_populates="exercises"
+    )
 
 
 class MuscleGroup(BaseModel):
     __tablename__ = "muscle_groups"
     name: Mapped[str] = mapped_column(String(255), index=True, unique=True)
+    exercises: Mapped[list["Exercise"]] = relationship(
+        secondary=exercise_muscle_group, back_populates="muscle_groups"
+    )
 
 
 class Workout(BaseModel):
     __tablename__ = "workouts"
+    exercises: Mapped[list["WorkoutExercise"]] = relationship(
+        back_populates="workout",
+        cascade="all, delete-orphan",
+        order_by="WorkoutExercise.order",
+    )
     date: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -67,3 +89,4 @@ class Set(BaseModel):
     set_number: Mapped[int] = mapped_column(Integer)
     reps: Mapped[int] = mapped_column(Integer)
     weight: Mapped[float] = mapped_column(Float)
+    workout_exercise: Mapped["WorkoutExercise"] = relationship(back_populates="sets")
