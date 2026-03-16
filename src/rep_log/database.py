@@ -1,13 +1,15 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from uuid import UUID, uuid4
 
 from fastapi import FastAPI
+from sqlalchemy import Uuid
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from .settings import settings
 
@@ -19,8 +21,16 @@ class Base(DeclarativeBase):
     pass
 
 
+class UUIDPrimaryKeyMixin:
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+
+
+class BaseModel(UUIDPrimaryKeyMixin, Base):
+    __abstract__ = True
+
+
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # type: ignore[misc]
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
     await engine.dispose()
 
