@@ -1,11 +1,32 @@
-from datetime import datetime
+from datetime import date
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class OrmBase:
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserRegister(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class UserRead(OrmBase, BaseModel):
+    id: UUID
+    email: str
+    is_active: bool
+
+
+class Token(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
 
 
 class ExerciseBase(BaseModel):
@@ -38,16 +59,17 @@ class WorkoutBase(BaseModel):
 
 
 class WorkoutCreate(WorkoutBase):
-    pass
+    workout_date: date = Field(default_factory=date.today)
 
 
 class WorkoutUpdate(BaseModel):
     notes: str | None = Field(default=None, min_length=1, max_length=2048)
+    workout_date: date | None = None
 
 
 class WorkoutRead(OrmBase, WorkoutBase):
     id: UUID
-    date: datetime
+    workout_date: date
     exercises: list["WorkoutExerciseRead"] = Field(default_factory=list)
 
 
@@ -56,13 +78,11 @@ class WorkoutExerciseBase(BaseModel):
 
 
 class WorkoutExerciseCreate(WorkoutExerciseBase):
-    workout_id: UUID
     exercise_id: UUID
 
 
 class WorkoutExerciseUpdate(BaseModel):
     order: int | None = Field(default=None, gt=0)
-    workout_id: UUID | None = None
     exercise_id: UUID | None = None
 
 

@@ -1,9 +1,10 @@
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID
 
 from sqlalchemy import (
     Boolean,
     Column,
+    Date,
     DateTime,
     Float,
     ForeignKey,
@@ -110,9 +111,7 @@ class Workout(BaseModel):
         cascade="all, delete-orphan",
         order_by="WorkoutExercise.order",
     )
-    date: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    workout_date: Mapped[date] = mapped_column(Date, server_default=func.current_date())
     notes: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     user_id: Mapped[UUID] = mapped_column(
         Uuid, ForeignKey("users.id", ondelete="CASCADE")
