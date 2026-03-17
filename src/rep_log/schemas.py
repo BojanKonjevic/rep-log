@@ -29,14 +29,6 @@ class MuscleGroupBase(BaseModel):
     name: str = Field(min_length=1, max_length=255)
 
 
-class MuscleGroupCreate(MuscleGroupBase):
-    pass
-
-
-class MuscleGroupUpdate(BaseModel):
-    name: str | None = Field(default=None, min_length=1, max_length=255)
-
-
 class MuscleGroupRead(OrmBase, MuscleGroupBase):
     id: UUID
 
