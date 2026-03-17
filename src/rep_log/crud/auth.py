@@ -4,7 +4,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from rep_log.models import RefreshToken, User
+from rep_log.models import Exercise, RefreshToken, User
 from rep_log.security import generate_refresh_token, hash_password
 from rep_log.settings import settings
 
@@ -20,8 +20,45 @@ async def get_user_by_id(session: AsyncSession, user_id: UUID) -> User | None:
 
 
 async def create_user(session: AsyncSession, email: str, password: str) -> User:
+    default_exercises = [
+        "Bench Press",
+        "Incline Bench Press",
+        "Push-Up",
+        "Dip",
+        "Pull-Up",
+        "Chin-Up",
+        "Bent Over Row",
+        "Lat Pulldown",
+        "Seated Cable Row",
+        "Deadlift",
+        "Squat",
+        "Front Squat",
+        "Lunge",
+        "Romanian Deadlift",
+        "Leg Curl",
+        "Leg Extension",
+        "Calf Raise",
+        "Overhead Press",
+        "Lateral Raise",
+        "Face Pull",
+        "Barbell Curl",
+        "Hammer Curl",
+        "Preacher Curl",
+        "Tricep Pushdown",
+        "Skullcrusher",
+        "Close-Grip Bench Press",
+        "Crunch",
+        "Hanging Leg Raise",
+        "Plank",
+        "Ab Wheel Rollout",
+        "Hip Thrust",
+        "Glute Bridge",
+    ]
     user = User(email=email, hashed_password=hash_password(password))
     session.add(user)
+    await session.flush()
+    for exercise in default_exercises:
+        session.add(Exercise(name=exercise, user_id=user.id))
     await session.commit()
     await session.refresh(user)
     return user
