@@ -68,11 +68,14 @@ class WorkoutExercise(BaseModel):
     order: Mapped[int] = mapped_column(Integer)
 
     workout: Mapped["Workout"] = relationship(back_populates="exercises")
-    exercise: Mapped["Exercise"] = relationship(back_populates="workout_exercises")
+    exercise: Mapped["Exercise"] = relationship(
+        back_populates="workout_exercises", lazy="selectin"
+    )
     sets: Mapped[list["Set"]] = relationship(
         back_populates="workout_exercise",
         cascade="all, delete-orphan",
         order_by="Set.set_number",
+        lazy="selectin",
     )
 
 
@@ -89,7 +92,7 @@ class Exercise(BaseModel):
         back_populates="exercise"
     )
     muscle_groups: Mapped[list["MuscleGroup"]] = relationship(
-        secondary=exercise_muscle_group, back_populates="exercises"
+        secondary=exercise_muscle_group, back_populates="exercises", lazy="selectin"
     )
     user_id: Mapped[UUID] = mapped_column(
         Uuid, ForeignKey("users.id", ondelete="CASCADE")
@@ -110,6 +113,7 @@ class Workout(BaseModel):
         back_populates="workout",
         cascade="all, delete-orphan",
         order_by="WorkoutExercise.order",
+        lazy="selectin",
     )
     workout_date: Mapped[date] = mapped_column(Date, server_default=func.current_date())
     notes: Mapped[str | None] = mapped_column(String(2048), nullable=True)
