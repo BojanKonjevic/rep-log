@@ -34,11 +34,13 @@ class ExerciseBase(BaseModel):
 
 
 class ExerciseCreate(ExerciseBase):
+    muscle_group_ids: list[UUID] = Field(default_factory=list)
     pass
 
 
 class ExerciseUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=255)
+    muscle_group_ids: list[UUID] = Field(default_factory=list)
 
 
 class ExerciseRead(OrmBase, ExerciseBase):
