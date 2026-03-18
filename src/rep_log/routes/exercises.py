@@ -51,3 +51,14 @@ async def create_exercise(
         return await crud.create_exercise(session, exercise, user.id)
     except ValueError as err:
         raise HTTPException(status_code=409, detail=str(err)) from err
+
+
+@router.delete("/{exercise_id}", status_code=204)
+async def delete_exercise(
+    exercise_id: UUID,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    deleted = await crud.delete_exercise(session, exercise_id, user.id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Exercise not found")

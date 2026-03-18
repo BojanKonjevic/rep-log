@@ -65,3 +65,20 @@ async def create_exercise(
         raise ValueError("Exercise already exists") from err
     await session.refresh(db_exercise, ["muscle_groups"])
     return db_exercise
+
+
+async def delete_exercise(
+    session: AsyncSession, exercise_id: UUID, user_id: UUID
+) -> bool:
+    db_exercise = (
+        await session.execute(
+            select(Exercise).where(
+                Exercise.id == exercise_id, Exercise.user_id == user_id
+            )
+        )
+    ).scalar_one_or_none()
+    if not db_exercise:
+        return False
+    await session.delete(db_exercise)
+    await session.commit()
+    return True
