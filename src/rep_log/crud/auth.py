@@ -4,9 +4,44 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from rep_log.models import Exercise, RefreshToken, User
+from rep_log.models import Exercise, MuscleGroup, RefreshToken, User
 from rep_log.security import generate_refresh_token, hash_password
 from rep_log.settings import settings
+
+DEFAULT_EXERCISES = {
+    "Bench Press": ["chest", "triceps", "delts"],
+    "Incline Bench Press": ["chest", "triceps", "delts"],
+    "Push-Up": ["chest", "triceps", "delts"],
+    "Dip": ["chest", "triceps", "delts"],
+    "Pull-Up": ["back", "biceps"],
+    "Chin-Up": ["back", "biceps"],
+    "Bent Over Row": ["back", "biceps", "lower back"],
+    "Lat Pulldown": ["back", "biceps"],
+    "Seated Cable Row": ["back", "biceps"],
+    "Deadlift": ["back", "glutes", "hamstrings", "lower back"],
+    "Squat": ["quadriceps", "glutes", "hamstrings"],
+    "Front Squat": ["quadriceps", "glutes"],
+    "Lunge": ["quadriceps", "glutes", "hamstrings"],
+    "Romanian Deadlift": ["hamstrings", "glutes", "lower back"],
+    "Leg Curl": ["hamstrings"],
+    "Leg Extension": ["quadriceps"],
+    "Calf Raise": ["calves"],
+    "Overhead Press": ["delts", "triceps"],
+    "Lateral Raise": ["delts"],
+    "Face Pull": ["delts", "traps"],
+    "Barbell Curl": ["biceps", "forearms"],
+    "Hammer Curl": ["biceps", "forearms"],
+    "Preacher Curl": ["biceps"],
+    "Tricep Pushdown": ["triceps"],
+    "Skullcrusher": ["triceps"],
+    "Close-Grip Bench Press": ["triceps", "chest"],
+    "Crunch": ["abs"],
+    "Hanging Leg Raise": ["abs", "hip flexors"],
+    "Plank": ["abs", "lower back"],
+    "Ab Wheel Rollout": ["abs", "lower back"],
+    "Hip Thrust": ["glutes"],
+    "Glute Bridge": ["glutes"],
+}
 
 
 async def get_user_by_email(session: AsyncSession, email: str) -> User | None:
@@ -20,45 +55,23 @@ async def get_user_by_id(session: AsyncSession, user_id: UUID) -> User | None:
 
 
 async def create_user(session: AsyncSession, email: str, password: str) -> User:
-    default_exercises = [
-        "Bench Press",
-        "Incline Bench Press",
-        "Push-Up",
-        "Dip",
-        "Pull-Up",
-        "Chin-Up",
-        "Bent Over Row",
-        "Lat Pulldown",
-        "Seated Cable Row",
-        "Deadlift",
-        "Squat",
-        "Front Squat",
-        "Lunge",
-        "Romanian Deadlift",
-        "Leg Curl",
-        "Leg Extension",
-        "Calf Raise",
-        "Overhead Press",
-        "Lateral Raise",
-        "Face Pull",
-        "Barbell Curl",
-        "Hammer Curl",
-        "Preacher Curl",
-        "Tricep Pushdown",
-        "Skullcrusher",
-        "Close-Grip Bench Press",
-        "Crunch",
-        "Hanging Leg Raise",
-        "Plank",
-        "Ab Wheel Rollout",
-        "Hip Thrust",
-        "Glute Bridge",
-    ]
     user = User(email=email, hashed_password=hash_password(password))
     session.add(user)
     await session.flush()
-    for exercise in default_exercises:
-        session.add(Exercise(name=exercise, user_id=user.id))
+    all_names = {name for names in DEFAULT_EXERCISES.values() for name in names}
+    result = await session.execute(
+        select(MuscleGroup).where(MuscleGroup.name.in_(all_names))
+    )
+    muscle_groups_by_name = {mg.name: mg for mg in result.scalars().all()}
+    exercises = [
+        Exercise(
+            name=name,
+            muscle_groups=[muscle_groups_by_name[n] for n in muscle_group_names],
+            user_id=user.id,
+        )
+        for name, muscle_group_names in DEFAULT_EXERCISES.items()
+    ]
+    session.add_all(exercises)
     await session.commit()
     await session.refresh(user)
     return user

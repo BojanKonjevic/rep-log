@@ -40,7 +40,7 @@ class ExerciseCreate(ExerciseBase):
 
 class ExerciseUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=255)
-    muscle_group_ids: list[UUID] | None = None
+    muscle_group_names: list[str] | None = None
 
 
 class ExerciseRead(OrmBase, ExerciseBase):
