@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from rep_log import schemas
@@ -15,18 +15,17 @@ router = APIRouter(prefix="/exercises", tags=["exercises"])
 
 @router.get("", response_model=Sequence[schemas.ExerciseRead])
 async def get_all_exercises(
-    user: User = Depends(get_current_user),
     muscle_group_name: str | None = None,
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=10, ge=1, le=100),
+    user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> Sequence[Exercise]:
     if muscle_group_name is not None:
-        try:
-            return await crud.get_exercises_for_muscle_group(
-                session, muscle_group_name, user.id
-            )
-        except ValueError as err:
-            raise HTTPException(status_code=404, detail=str(err)) from err
-    return await crud.get_all_exercises(session, user.id)
+        return await crud.get_exercises_for_muscle_group(
+            session, muscle_group_name, user.id, page, limit
+        )
+    return await crud.get_all_exercises(session, user.id, page, limit)
 
 
 @router.get("/{exercise_id}", response_model=schemas.ExerciseRead)

@@ -9,26 +9,29 @@ from rep_log.models import Exercise, MuscleGroup
 from rep_log.schemas import ExerciseCreate, ExerciseUpdate
 
 
-async def get_all_exercises(session: AsyncSession, user_id: UUID) -> Sequence[Exercise]:
-    result = await session.execute(select(Exercise).where(Exercise.user_id == user_id))
+async def get_all_exercises(
+    session: AsyncSession, user_id: UUID, page: int = 1, limit: int = 10
+) -> Sequence[Exercise]:
+    query = select(Exercise).where(Exercise.user_id == user_id)
+    result = await session.execute(query.offset((page - 1) * limit).limit(limit))
     return result.scalars().all()
 
 
 async def get_exercises_for_muscle_group(
-    session: AsyncSession, muscle_group_name: str, user_id: UUID
+    session: AsyncSession,
+    muscle_group_name: str,
+    user_id: UUID,
+    page: int = 1,
+    limit: int = 10,
 ) -> Sequence[Exercise]:
-    muscle_group = (
-        await session.execute(
-            select(MuscleGroup).where(MuscleGroup.name == muscle_group_name)
-        )
-    ).scalar_one_or_none()
-    if muscle_group is None:
-        raise ValueError("Muscle group not found")
     result = await session.execute(
-        select(Exercise).where(
+        select(Exercise)
+        .where(
             Exercise.user_id == user_id,
             Exercise.muscle_groups.any(MuscleGroup.name == muscle_group_name),
         )
+        .offset((page - 1) * limit)
+        .limit(limit)
     )
     return result.scalars().all()
 
