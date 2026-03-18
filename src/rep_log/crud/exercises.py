@@ -45,19 +45,23 @@ async def get_exercise(
 async def create_exercise(
     session: AsyncSession, exercise: ExerciseCreate, user_id: UUID
 ) -> Exercise:
-    muscle_group_ids = set(exercise.muscle_group_ids)
+    muscle_group_names = set(exercise.muscle_group_names)
     result = await session.execute(
-        select(MuscleGroup).where(MuscleGroup.id.in_(muscle_group_ids))
+        select(MuscleGroup).where(MuscleGroup.name.in_(muscle_group_names))
     )
     muscle_groups = result.scalars().all()
+    found_names = {mg.name for mg in muscle_groups}
+    missing = muscle_group_names - found_names
+    if missing:
+        raise ValueError(f"Unknown muscle groups: {', '.join(sorted(missing))}")
     db_exercise = Exercise(
         name=exercise.name, muscle_groups=muscle_groups, user_id=user_id
     )
-
     session.add(db_exercise)
     try:
         await session.commit()
     except IntegrityError as err:
+        await session.rollback()
         raise ValueError("Exercise already exists") from err
     await session.refresh(db_exercise, ["muscle_groups"])
     return db_exercise
