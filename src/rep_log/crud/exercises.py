@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from rep_log.models import Exercise, MuscleGroup
-from rep_log.schemas import ExerciseCreate
+from rep_log.schemas import ExerciseCreate, ExerciseUpdate
 
 
 async def get_all_exercises(session: AsyncSession, user_id: UUID) -> Sequence[Exercise]:
@@ -82,3 +82,38 @@ async def delete_exercise(
     await session.delete(db_exercise)
     await session.commit()
     return True
+
+
+async def update_exercise(
+    session: AsyncSession,
+    exercise_id: UUID,
+    exercise_update: ExerciseUpdate,
+    user_id: UUID,
+) -> Exercise | None:
+    db_exercise = (
+        await session.execute(
+            select(Exercise).where(
+                Exercise.id == exercise_id, Exercise.user_id == user_id
+            )
+        )
+    ).scalar_one_or_none()
+    if not db_exercise:
+        return None
+    update_data = exercise_update.model_dump(exclude_none=True)
+    updated_muscle_groups = update_data.pop("muscle_group_names", None)
+    if updated_muscle_groups is not None:
+        muscle_group_names = set(updated_muscle_groups)
+        result = await session.execute(
+            select(MuscleGroup).where(MuscleGroup.name.in_(muscle_group_names))
+        )
+        muscle_groups = result.scalars().all()
+        found_names = {mg.name for mg in muscle_groups}
+        missing = muscle_group_names - found_names
+        if missing:
+            raise ValueError(f"Unknown muscle groups: {', '.join(sorted(missing))}")
+        db_exercise.muscle_groups = list(muscle_groups)
+    for field, value in update_data.items():
+        setattr(db_exercise, field, value)
+    await session.commit()
+    await session.refresh(db_exercise, ["muscle_groups"])
+    return db_exercise

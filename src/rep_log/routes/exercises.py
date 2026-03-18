@@ -62,3 +62,18 @@ async def delete_exercise(
     deleted = await crud.delete_exercise(session, exercise_id, user.id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Exercise not found")
+
+
+@router.patch("/{exercise_id}", response_model=schemas.ExerciseRead)
+async def update_exercise(
+    exercise_id: UUID,
+    exercise_update: schemas.ExerciseUpdate,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Exercise:
+    updated_exercise = await crud.update_exercise(
+        session, exercise_id, exercise_update, user.id
+    )
+    if not updated_exercise:
+        raise HTTPException(status_code=404, detail="Exercise not found")
+    return updated_exercise
