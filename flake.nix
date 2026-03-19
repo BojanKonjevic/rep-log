@@ -64,7 +64,7 @@
             pre-commit install >/dev/null 2>&1 || true
           fi
 
-          
+
           echo "Commands:"
           echo "  just test                    run tests"
           echo "  just cov                     coverage"
@@ -77,7 +77,6 @@
           echo "  just downgrade               roll back one step"
           echo "  just db-drop                 delete the local database"
           echo
-          exec zsh
         '';
       };
     });
