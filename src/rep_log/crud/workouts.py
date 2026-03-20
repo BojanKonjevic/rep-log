@@ -62,3 +62,18 @@ async def update_workout(
     await session.commit()
     await session.refresh(db_workout)
     return db_workout
+
+
+async def delete_workout(
+    session: AsyncSession, workout_id: UUID, user_id: UUID
+) -> bool:
+    db_workout = (
+        await session.execute(
+            select(Workout).where(Workout.id == workout_id, Workout.user_id == user_id)
+        )
+    ).scalar_one_or_none()
+    if not db_workout:
+        return False
+    await session.delete(db_workout)
+    await session.commit()
+    return True

@@ -57,3 +57,14 @@ async def update_workout(
     if not updated_workout:
         raise HTTPException(status_code=404, detail="Workout not found")
     return updated_workout
+
+
+@router.delete("/{workout_id}", status_code=204)
+async def delete_workout(
+    workout_id: UUID,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    deleted = await crud.delete_workout(session, workout_id, user.id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Workout not found")
