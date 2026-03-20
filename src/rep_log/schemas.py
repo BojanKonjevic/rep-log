@@ -63,8 +63,7 @@ class WorkoutCreate(WorkoutBase):
     workout_date: date = Field(default_factory=date.today)
 
 
-class WorkoutUpdate(BaseModel):
-    notes: str | None = Field(default=None, min_length=1, max_length=2048)
+class WorkoutUpdate(WorkoutBase):
     workout_date: date | None = None
 
 
