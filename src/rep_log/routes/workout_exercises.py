@@ -37,7 +37,7 @@ async def create_workout_exercise(
     "/{workout_id}/exercises/{workout_exercise_id}",
     response_model=schemas.WorkoutExerciseRead,
 )
-async def update_exercise(
+async def update_workout_exercise(
     workout_id: UUID,
     workout_exercise_id: UUID,
     workout_exercise_update: schemas.WorkoutExerciseUpdate,
@@ -53,3 +53,17 @@ async def update_exercise(
     except ValueError as err:
         raise HTTPException(status_code=409, detail=str(err)) from err
     return updated_workout_exercise
+
+
+@router.delete("/{workout_id}/exercises/{workout_exercise_id}", status_code=204)
+async def delete_workout_exercise(
+    workout_id: UUID,
+    workout_exercise_id: UUID,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    deleted = await crud.delete_workout_exercise(
+        session, workout_id, workout_exercise_id, user.id
+    )
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Workout exercise not found")
