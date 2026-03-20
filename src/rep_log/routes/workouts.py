@@ -33,3 +33,12 @@ async def get_workout(
     if workout is None:
         raise HTTPException(status_code=404, detail="workout not found")
     return workout
+
+
+@router.post("", response_model=schemas.WorkoutRead, status_code=201)
+async def create_workout(
+    workout: schemas.WorkoutCreate,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Workout:
+    return await crud.create_workout(session, workout, user.id)
