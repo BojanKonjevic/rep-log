@@ -11,27 +11,9 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-from .settings import settings
+from rep_log.seed import MUSCLE_GROUPS
+from rep_log.settings import settings
 
-MUSCLE_GROUPS = [
-    "chest",
-    "back",
-    "delts",
-    "traps",
-    "biceps",
-    "triceps",
-    "forearms",
-    "abs",
-    "lower back",
-    "glutes",
-    "quadriceps",
-    "hamstrings",
-    "calves",
-    "adductors",
-    "abductors",
-    "hip flexors",
-    "neck",
-]
 engine = create_async_engine(settings.database_url, echo=settings.debug)
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 

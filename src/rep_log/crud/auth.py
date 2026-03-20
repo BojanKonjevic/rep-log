@@ -6,42 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from rep_log.models import Exercise, MuscleGroup, RefreshToken, User
 from rep_log.security import generate_refresh_token, hash_password
+from rep_log.seed import DEFAULT_EXERCISES
 from rep_log.settings import settings
-
-DEFAULT_EXERCISES = {
-    "Bench Press": ["chest", "triceps", "delts"],
-    "Incline Bench Press": ["chest", "triceps", "delts"],
-    "Push-Up": ["chest", "triceps", "delts"],
-    "Dip": ["chest", "triceps", "delts"],
-    "Pull-Up": ["back", "biceps"],
-    "Chin-Up": ["back", "biceps"],
-    "Bent Over Row": ["back", "biceps", "lower back"],
-    "Lat Pulldown": ["back", "biceps"],
-    "Seated Cable Row": ["back", "biceps"],
-    "Deadlift": ["back", "glutes", "hamstrings", "lower back"],
-    "Squat": ["quadriceps", "glutes", "hamstrings"],
-    "Front Squat": ["quadriceps", "glutes"],
-    "Lunge": ["quadriceps", "glutes", "hamstrings"],
-    "Romanian Deadlift": ["hamstrings", "glutes", "lower back"],
-    "Leg Curl": ["hamstrings"],
-    "Leg Extension": ["quadriceps"],
-    "Calf Raise": ["calves"],
-    "Overhead Press": ["delts", "triceps"],
-    "Lateral Raise": ["delts"],
-    "Face Pull": ["delts", "traps"],
-    "Barbell Curl": ["biceps", "forearms"],
-    "Hammer Curl": ["biceps", "forearms"],
-    "Preacher Curl": ["biceps"],
-    "Tricep Pushdown": ["triceps"],
-    "Skullcrusher": ["triceps"],
-    "Close-Grip Bench Press": ["triceps", "chest"],
-    "Crunch": ["abs"],
-    "Hanging Leg Raise": ["abs", "hip flexors"],
-    "Plank": ["abs", "lower back"],
-    "Ab Wheel Rollout": ["abs", "lower back"],
-    "Hip Thrust": ["glutes"],
-    "Glute Bridge": ["glutes"],
-}
 
 
 async def get_user_by_email(session: AsyncSession, email: str) -> User | None:

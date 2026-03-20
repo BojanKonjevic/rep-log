@@ -35,7 +35,6 @@ class ExerciseBase(BaseModel):
 
 class ExerciseCreate(ExerciseBase):
     muscle_group_names: list[str] = Field(default_factory=list)
-    pass
 
 
 class ExerciseUpdate(BaseModel):

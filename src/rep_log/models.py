@@ -59,6 +59,12 @@ class RefreshToken(BaseModel):
 
 class WorkoutExercise(BaseModel):
     __tablename__ = "workout_exercises"
+    __table_args__ = (
+        UniqueConstraint(
+            "workout_id",
+            "order",
+        ),
+    )
     workout_id: Mapped[UUID] = mapped_column(
         Uuid, ForeignKey("workouts.id", ondelete="CASCADE")
     )
@@ -124,6 +130,12 @@ class Workout(BaseModel):
 
 class Set(BaseModel):
     __tablename__ = "sets"
+    __table_args__ = (
+        UniqueConstraint(
+            "workout_exercise_id",
+            "set_number",
+        ),
+    )
     workout_exercise_id: Mapped[UUID] = mapped_column(
         Uuid, ForeignKey("workout_exercises.id", ondelete="CASCADE")
     )

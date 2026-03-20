@@ -7,6 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from rep_log import schemas
 from rep_log.crud import auth
 from rep_log.database import get_session
+from rep_log.dependencies import get_current_user
+from rep_log.models import User
 from rep_log.security import create_access_token, verify_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -64,3 +66,8 @@ async def logout(
     session: AsyncSession = Depends(get_session),
 ) -> None:
     await auth.revoke_refresh_token(session, body.refresh_token)
+
+
+@router.get("/me", response_model=schemas.UserRead)
+async def get_me(current_user: User = Depends(get_current_user)) -> schemas.UserRead:
+    return schemas.UserRead.model_validate(current_user)
