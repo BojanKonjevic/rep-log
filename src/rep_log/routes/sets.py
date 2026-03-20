@@ -47,3 +47,14 @@ async def update_set(
     except ValueError as err:
         raise HTTPException(status_code=409, detail=str(err)) from err
     return updated_set
+
+
+@router.delete("/{set_id}", status_code=204)
+async def delete_set(
+    set_id: UUID,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    deleted = await crud.delete_set(session, set_id, user.id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Set not found")

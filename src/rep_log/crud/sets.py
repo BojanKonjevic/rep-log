@@ -67,3 +67,19 @@ async def update_set(
         raise ValueError("Set already exists at that position") from err
     await session.refresh(db_set)
     return db_set
+
+
+async def delete_set(session: AsyncSession, set_id: UUID, user_id: UUID) -> bool:
+    db_set = (
+        await session.execute(
+            select(Set)
+            .join(WorkoutExercise)
+            .join(Workout)
+            .where(Set.id == set_id, Workout.user_id == user_id)
+        )
+    ).scalar_one_or_none()
+    if not db_set:
+        return False
+    await session.delete(db_set)
+    await session.commit()
+    return True
