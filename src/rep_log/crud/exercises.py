@@ -102,7 +102,7 @@ async def update_exercise(
     ).scalar_one_or_none()
     if not db_exercise:
         return None
-    update_data = exercise_update.model_dump(exclude_none=True)
+    update_data = exercise_update.model_dump(exclude_unset=True)
     updated_muscle_groups = update_data.pop("muscle_group_names", None)
     if updated_muscle_groups is not None:
         muscle_group_names = set(updated_muscle_groups)

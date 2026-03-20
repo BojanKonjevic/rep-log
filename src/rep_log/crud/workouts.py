@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from rep_log.models import Workout
-from rep_log.schemas import WorkoutCreate
+from rep_log.schemas import WorkoutCreate, WorkoutUpdate
 
 
 async def get_all_workouts(
@@ -35,6 +35,30 @@ async def create_workout(
         workout_date=workout.workout_date, notes=workout.notes, user_id=user_id
     )
     session.add(db_workout)
+    await session.commit()
+    await session.refresh(db_workout)
+    return db_workout
+
+
+async def update_workout(
+    session: AsyncSession,
+    workout_id: UUID,
+    workout_update: WorkoutUpdate,
+    user_id: UUID,
+) -> Workout | None:
+    db_workout = (
+        await session.execute(
+            select(Workout).where(
+                Workout.id == workout_id,
+                Workout.user_id == user_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if not db_workout:
+        return None
+    update_data = workout_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_workout, field, value)
     await session.commit()
     await session.refresh(db_workout)
     return db_workout

@@ -42,3 +42,18 @@ async def create_workout(
     session: AsyncSession = Depends(get_session),
 ) -> Workout:
     return await crud.create_workout(session, workout, user.id)
+
+
+@router.patch("/{workout_id}", response_model=schemas.WorkoutRead)
+async def update_workout(
+    workout_id: UUID,
+    workout_update: schemas.WorkoutUpdate,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Workout:
+    updated_workout = await crud.update_workout(
+        session, workout_id, workout_update, user.id
+    )
+    if not updated_workout:
+        raise HTTPException(status_code=404, detail="Workout not found")
+    return updated_workout
