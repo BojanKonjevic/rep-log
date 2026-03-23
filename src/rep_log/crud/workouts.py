@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from datetime import date
 from uuid import UUID
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from rep_log.models import Exercise, MuscleGroup, Workout, WorkoutExercise
@@ -19,34 +19,47 @@ async def get_all_workouts(
     muscle_group_names: Sequence[str] | None = None,
     page: int = 1,
     limit: int = 10,
-) -> Sequence[Workout]:
+) -> tuple[Sequence[Workout], int]:
     query = select(Workout).where(Workout.user_id == user_id)
+    countQuery = (
+        select(func.count()).select_from(Workout).where(Workout.user_id == user_id)
+    )
     if search:
-        query = query.where(
-            or_(Workout.name.ilike(f"%{search}%"), Workout.notes.ilike(f"%{search}%"))
+        searchFilter = or_(
+            Workout.name.ilike(f"%{search}%"), Workout.notes.ilike(f"%{search}%")
         )
+        query = query.where(searchFilter)
+        countQuery = countQuery.where(searchFilter)
     if date_from is not None:
-        query = query.where(Workout.workout_date >= date_from)
+        date_from_filter = Workout.workout_date >= date_from
+        query = query.where(date_from_filter)
+        countQuery = countQuery.where(date_from_filter)
     if date_to is not None:
-        query = query.where(Workout.workout_date <= date_to)
+        date_to_filter = Workout.workout_date <= date_to
+        query = query.where(date_to_filter)
+        countQuery = countQuery.where(date_to_filter)
     if exercise_ids:
-        query = query.where(
-            Workout.exercises.any(WorkoutExercise.exercise_id.in_(exercise_ids))
+        exercisesFilter = Workout.exercises.any(
+            WorkoutExercise.exercise_id.in_(exercise_ids)
         )
+        query = query.where(exercisesFilter)
+        countQuery = countQuery.where(exercisesFilter)
     if muscle_group_names:
-        query = query.where(
-            Workout.exercises.any(
-                WorkoutExercise.exercise.has(
-                    Exercise.muscle_groups.any(MuscleGroup.name.in_(muscle_group_names))
-                )
+        muscle_groups_filter = Workout.exercises.any(
+            WorkoutExercise.exercise.has(
+                Exercise.muscle_groups.any(MuscleGroup.name.in_(muscle_group_names))
             )
         )
+        query = query.where(muscle_groups_filter)
+        countQuery = countQuery.where(muscle_groups_filter)
     result = await session.execute(
         query.offset((page - 1) * limit)
         .limit(limit)
         .order_by(Workout.workout_date.desc(), Workout.id)
     )
-    return result.scalars().all()
+    countResult = await session.execute(countQuery)
+    count = countResult.scalar_one()
+    return (result.scalars().all(), count)
 
 
 async def get_workout(
