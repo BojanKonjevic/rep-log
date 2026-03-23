@@ -49,7 +49,7 @@ class UUIDPrimaryKeyMixin:
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
 
 
-class BaseModel(UUIDPrimaryKeyMixin, Base):
+class DBModel(UUIDPrimaryKeyMixin, Base):
     __abstract__ = True
 
 

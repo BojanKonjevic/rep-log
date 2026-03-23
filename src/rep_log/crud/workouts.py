@@ -32,7 +32,10 @@ async def create_workout(
     session: AsyncSession, workout: WorkoutCreate, user_id: UUID
 ) -> Workout:
     db_workout = Workout(
-        workout_date=workout.workout_date, notes=workout.notes, user_id=user_id
+        name=workout.name,
+        workout_date=workout.workout_date,
+        notes=workout.notes,
+        user_id=user_id,
     )
     session.add(db_workout)
     await session.commit()

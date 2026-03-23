@@ -56,6 +56,7 @@ class MuscleGroupRead(OrmBase, MuscleGroupBase):
 
 
 class WorkoutBase(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=255)
     notes: str | None = Field(default=None, min_length=1, max_length=2048)
 
 

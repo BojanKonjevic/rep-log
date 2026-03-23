@@ -16,7 +16,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from rep_log.database import Base, BaseModel, TZDateTime
+from rep_log.database import Base, DBModel, TZDateTime
 
 exercise_muscle_group = Table(
     "exercise_muscle_group",
@@ -32,7 +32,7 @@ exercise_muscle_group = Table(
 )
 
 
-class User(BaseModel):
+class User(DBModel):
     __tablename__ = "users"
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     hashed_password: Mapped[str] = mapped_column(String(255))
@@ -42,7 +42,7 @@ class User(BaseModel):
     created_at: Mapped[datetime] = mapped_column(TZDateTime, server_default=func.now())
 
 
-class RefreshToken(BaseModel):
+class RefreshToken(DBModel):
     __tablename__ = "refresh_tokens"
     token: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     user_id: Mapped[UUID] = mapped_column(
@@ -54,7 +54,7 @@ class RefreshToken(BaseModel):
     )
 
 
-class WorkoutExercise(BaseModel):
+class WorkoutExercise(DBModel):
     __tablename__ = "workout_exercises"
     __table_args__ = (
         UniqueConstraint(
@@ -82,7 +82,7 @@ class WorkoutExercise(BaseModel):
     )
 
 
-class Exercise(BaseModel):
+class Exercise(DBModel):
     __tablename__ = "exercises"
     __table_args__ = (
         UniqueConstraint(
@@ -102,7 +102,7 @@ class Exercise(BaseModel):
     )
 
 
-class MuscleGroup(BaseModel):
+class MuscleGroup(DBModel):
     __tablename__ = "muscle_groups"
     name: Mapped[str] = mapped_column(String(255), index=True, unique=True)
     exercises: Mapped[list["Exercise"]] = relationship(
@@ -110,8 +110,9 @@ class MuscleGroup(BaseModel):
     )
 
 
-class Workout(BaseModel):
+class Workout(DBModel):
     __tablename__ = "workouts"
+    name: Mapped[str | None] = mapped_column(String(255), index=True, nullable=True)
     exercises: Mapped[list["WorkoutExercise"]] = relationship(
         back_populates="workout",
         cascade="all, delete-orphan",
@@ -125,7 +126,7 @@ class Workout(BaseModel):
     )
 
 
-class Set(BaseModel):
+class Set(DBModel):
     __tablename__ = "sets"
     __table_args__ = (
         UniqueConstraint(
