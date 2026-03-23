@@ -47,7 +47,7 @@ async def create_refresh_token(session: AsyncSession, user_id: UUID) -> RefreshT
     token = RefreshToken(
         token=generate_refresh_token(),
         user_id=user_id,
-        expires_at=datetime.now(UTC).replace(tzinfo=None)
+        expires_at=datetime.now(UTC)
         + timedelta(days=settings.refresh_token_expire_days),
     )
     session.add(token)

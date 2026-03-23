@@ -51,7 +51,7 @@ async def refresh(
     db_token = await auth.get_refresh_token(session, body.refresh_token)
     if not db_token or db_token.revoked:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
-    if db_token.expires_at < datetime.now(UTC).replace(tzinfo=None):
+    if db_token.expires_at < datetime.now(UTC):
         raise HTTPException(status_code=401, detail="Refresh token expired")
     access_token = create_access_token(db_token.user_id)
     return schemas.Token(

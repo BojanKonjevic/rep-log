@@ -5,7 +5,6 @@ from sqlalchemy import (
     Boolean,
     Column,
     Date,
-    DateTime,
     Float,
     ForeignKey,
     Integer,
@@ -17,7 +16,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from rep_log.database import Base, BaseModel
+from rep_log.database import Base, BaseModel, TZDateTime
 
 exercise_muscle_group = Table(
     "exercise_muscle_group",
@@ -40,9 +39,7 @@ class User(BaseModel):
     is_active: Mapped[bool] = mapped_column(
         Boolean, default=True, server_default="true"
     )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(TZDateTime, server_default=func.now())
 
 
 class RefreshToken(BaseModel):
@@ -51,7 +48,7 @@ class RefreshToken(BaseModel):
     user_id: Mapped[UUID] = mapped_column(
         Uuid, ForeignKey("users.id", ondelete="CASCADE")
     )
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(TZDateTime)
     revoked: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default="false"
     )
