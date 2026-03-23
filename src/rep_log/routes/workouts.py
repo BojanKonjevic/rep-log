@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from datetime import date
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -15,12 +16,27 @@ router = APIRouter(prefix="/workouts", tags=["workouts"])
 
 @router.get("", response_model=Sequence[schemas.WorkoutRead])
 async def get_all_workouts(
+    search: str | None = Query(default=None),
+    date_from: date | None = Query(default=None),
+    date_to: date | None = Query(default=None),
+    exercise_ids: Sequence[UUID] | None = Query(default=None),
+    muscle_group_names: Sequence[str] | None = Query(default=None),
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=10, ge=1, le=100),
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> Sequence[Workout]:
-    return await crud.get_all_workouts(session, user.id, page, limit)
+    return await crud.get_all_workouts(
+        session,
+        user.id,
+        search,
+        date_from,
+        date_to,
+        exercise_ids,
+        muscle_group_names,
+        page,
+        limit,
+    )
 
 
 @router.get("/{workout_id}", response_model=schemas.WorkoutRead)
