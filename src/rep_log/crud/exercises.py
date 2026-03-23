@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
@@ -7,7 +8,13 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from rep_log.models import Exercise, MuscleGroup, Set, Workout, WorkoutExercise
-from rep_log.schemas import ExerciseCreate, ExercisePRsRead, ExerciseUpdate
+from rep_log.schemas import (
+    ExerciseBestSetRead,
+    ExerciseCreate,
+    ExerciseProgressionRead,
+    ExercisePRsRead,
+    ExerciseUpdate,
+)
 
 
 class MuscleGroupNotFound(Exception):
@@ -173,3 +180,66 @@ async def get_exercise_prs(
             )
         )
     return response
+
+
+async def get_exercise_progress(
+    session: AsyncSession,
+    exercise_id: UUID,
+    date_from: date | None,
+    date_to: date | None,
+    user_id: UUID,
+) -> Sequence[ExerciseProgressionRead]:
+    progress_query = (
+        select(
+            Set.reps,
+            Set.weight,
+            Workout.workout_date,
+            Workout.id,
+            func.row_number()
+            .over(
+                partition_by=(Set.reps, Workout.id),
+                order_by=(Set.weight.desc(), Workout.workout_date.desc()),
+            )
+            .label("row_number"),
+        )
+        .select_from(Set)
+        .join(WorkoutExercise)
+        .join(Workout)
+        .where(WorkoutExercise.exercise_id == exercise_id)
+        .where(Workout.user_id == user_id)
+    )
+    if date_from is not None:
+        progress_query = progress_query.where(Workout.workout_date >= date_from)
+    if date_to is not None:
+        progress_query = progress_query.where(Workout.workout_date <= date_to)
+    subq = progress_query.subquery()
+    result = await session.execute(
+        select(subq).where(subq.c.row_number == 1).order_by(subq.c.workout_date.asc())
+    )
+    grouped: dict[UUID, ExerciseProgressionRead] = {}
+    for row in result.all():
+        if row.id in grouped:
+            grouped[row.id].best_sets.append(
+                ExerciseBestSetRead(
+                    reps=row.reps,
+                    weight=row.weight,
+                    estimated_1rm=(
+                        row.weight * (1 + Decimal(row.reps) / Decimal(30))
+                    ).quantize(Decimal("0.01")),
+                )
+            )
+        else:
+            grouped[row.id] = ExerciseProgressionRead(
+                workout_id=row.id,
+                workout_date=row.workout_date,
+                best_sets=[
+                    ExerciseBestSetRead(
+                        reps=row.reps,
+                        weight=row.weight,
+                        estimated_1rm=(
+                            row.weight * (1 + Decimal(row.reps) / Decimal(30))
+                        ).quantize(Decimal("0.01")),
+                    )
+                ],
+            )
+    return list(grouped.values())

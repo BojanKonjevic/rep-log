@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from datetime import date
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -50,6 +51,24 @@ async def get_exercise_prs(
     if exercise is None:
         raise HTTPException(status_code=404, detail="Exercise not found")
     return await crud.get_exercise_prs(session, exercise_id, user.id)
+
+
+@router.get(
+    "/{exercise_id}/progress", response_model=Sequence[schemas.ExerciseProgressionRead]
+)
+async def get_exercise_progress(
+    exercise_id: UUID,
+    date_from: date | None = Query(default=None),
+    date_to: date | None = Query(default=None),
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Sequence[schemas.ExerciseProgressionRead]:
+    exercise = await crud.get_exercise(session, exercise_id, user.id)
+    if exercise is None:
+        raise HTTPException(status_code=404, detail="Exercise not found")
+    return await crud.get_exercise_progress(
+        session, exercise_id, date_from, date_to, user.id
+    )
 
 
 @router.post("", response_model=schemas.ExerciseRead, status_code=201)

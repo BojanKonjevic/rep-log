@@ -125,6 +125,18 @@ class ExercisePRsRead(BaseModel):
     workout_id: UUID
 
 
+class ExerciseBestSetRead(BaseModel):
+    reps: int
+    weight: Decimal
+    estimated_1rm: Decimal
+
+
+class ExerciseProgressionRead(BaseModel):
+    workout_id: UUID
+    workout_date: date
+    best_sets: list[ExerciseBestSetRead]
+
+
 WorkoutRead.model_rebuild()
 WorkoutExerciseRead.model_rebuild()
 ExerciseRead.model_rebuild()
