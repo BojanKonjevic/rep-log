@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
@@ -97,7 +98,7 @@ class WorkoutExerciseRead(OrmBase, WorkoutExerciseBase):
 class SetBase(BaseModel):
     set_number: int = Field(gt=0)
     reps: int = Field(gt=0)
-    weight: float = Field(ge=0)
+    weight: Decimal = Field(ge=0)
 
 
 class SetCreate(SetBase):

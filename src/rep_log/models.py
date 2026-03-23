@@ -1,13 +1,14 @@
 from datetime import date, datetime
+from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import (
     Boolean,
     Column,
     Date,
-    Float,
     ForeignKey,
     Integer,
+    Numeric,
     String,
     Table,
     UniqueConstraint,
@@ -139,5 +140,5 @@ class Set(DBModel):
     )
     set_number: Mapped[int] = mapped_column(Integer)
     reps: Mapped[int] = mapped_column(Integer)
-    weight: Mapped[float] = mapped_column(Float)
+    weight: Mapped[Decimal] = mapped_column(Numeric(precision=6, scale=2))
     workout_exercise: Mapped["WorkoutExercise"] = relationship(back_populates="sets")
