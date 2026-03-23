@@ -1,12 +1,13 @@
 from collections.abc import Sequence
+from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from rep_log.models import Exercise, MuscleGroup
-from rep_log.schemas import ExerciseCreate, ExerciseUpdate
+from rep_log.models import Exercise, MuscleGroup, Set, Workout, WorkoutExercise
+from rep_log.schemas import ExerciseCreate, ExercisePRsRead, ExerciseUpdate
 
 
 class MuscleGroupNotFound(Exception):
@@ -132,3 +133,43 @@ async def update_exercise(
         raise ValueError("Exercise already exists") from err
     await session.refresh(db_exercise, ["muscle_groups"])
     return db_exercise
+
+
+async def get_exercise_prs(
+    session: AsyncSession, exercise_id: UUID, user_id: UUID
+) -> Sequence[ExercisePRsRead]:
+    subq = (
+        select(
+            Set.reps,
+            Set.weight,
+            Workout.workout_date,
+            Workout.id,
+            func.row_number()
+            .over(
+                partition_by=Set.reps,
+                order_by=(Set.weight.desc(), Workout.workout_date.desc()),
+            )
+            .label("row_number"),
+        )
+        .select_from(Set)
+        .join(WorkoutExercise)
+        .join(Workout)
+        .where(WorkoutExercise.exercise_id == exercise_id)
+        .where(Workout.user_id == user_id)
+        .subquery()
+    )
+    result = await session.execute(select(subq).where(subq.c.row_number == 1))
+    response = []
+    for row in result.all():
+        response.append(
+            ExercisePRsRead(
+                reps=row.reps,
+                weight=row.weight,
+                estimated_1rm=(
+                    row.weight * (1 + Decimal(row.reps) / Decimal(30))
+                ).quantize(Decimal("0.01")),
+                achieved_on=row.workout_date,
+                workout_id=row.id,
+            )
+        )
+    return response

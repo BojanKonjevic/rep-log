@@ -40,6 +40,18 @@ async def get_exercise(
     return exercise
 
 
+@router.get("/{exercise_id}/pr", response_model=Sequence[schemas.ExercisePRsRead])
+async def get_exercise_prs(
+    exercise_id: UUID,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Sequence[schemas.ExercisePRsRead]:
+    exercise = await crud.get_exercise(session, exercise_id, user.id)
+    if exercise is None:
+        raise HTTPException(status_code=404, detail="Exercise not found")
+    return await crud.get_exercise_prs(session, exercise_id, user.id)
+
+
 @router.post("", response_model=schemas.ExerciseRead, status_code=201)
 async def create_exercise(
     exercise: schemas.ExerciseCreate,

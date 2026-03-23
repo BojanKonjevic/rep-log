@@ -117,6 +117,14 @@ class SetRead(OrmBase, SetBase):
     workout_exercise_id: UUID
 
 
+class ExercisePRsRead(BaseModel):
+    reps: int
+    weight: Decimal
+    estimated_1rm: Decimal
+    achieved_on: date
+    workout_id: UUID
+
+
 WorkoutRead.model_rebuild()
 WorkoutExerciseRead.model_rebuild()
 ExerciseRead.model_rebuild()
