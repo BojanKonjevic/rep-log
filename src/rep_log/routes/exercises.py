@@ -48,6 +48,8 @@ async def create_exercise(
 ) -> Exercise:
     try:
         return await crud.create_exercise(session, exercise, user.id)
+    except crud.MuscleGroupNotFound as err:
+        raise HTTPException(status_code=422, detail=str(err)) from err
     except ValueError as err:
         raise HTTPException(status_code=409, detail=str(err)) from err
 
@@ -70,9 +72,14 @@ async def update_exercise(
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> Exercise:
-    updated_exercise = await crud.update_exercise(
-        session, exercise_id, exercise_update, user.id
-    )
+    try:
+        updated_exercise = await crud.update_exercise(
+            session, exercise_id, exercise_update, user.id
+        )
+    except crud.MuscleGroupNotFound as err:
+        raise HTTPException(status_code=422, detail=str(err)) from err
+    except ValueError as err:
+        raise HTTPException(status_code=409, detail=str(err)) from err
     if not updated_exercise:
         raise HTTPException(status_code=404, detail="Exercise not found")
     return updated_exercise
