@@ -137,6 +137,16 @@ class ExerciseProgressionRead(BaseModel):
     best_sets: list[ExerciseBestSetRead]
 
 
+class MuscleGroupWeekRead(BaseModel):
+    week_start: date
+    weekly_sets: int
+
+
+class MuscleGroupVolumeRead(BaseModel):
+    muscle_group_id: UUID
+    all_weeks: list[MuscleGroupWeekRead]
+
+
 WorkoutRead.model_rebuild()
 WorkoutExerciseRead.model_rebuild()
 ExerciseRead.model_rebuild()
