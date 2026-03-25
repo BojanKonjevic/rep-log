@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 from datetime import date
 from decimal import Decimal
+from operator import or_
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -288,3 +289,81 @@ async def get_exercise_frequency(
         )
         for row in rows
     ]
+
+
+async def get_exercise_timeline(
+    session: AsyncSession,
+    exercise_id: UUID,
+    date_from: date | None,
+    date_to: date | None,
+    user_id: UUID,
+) -> Sequence[ExerciseProgressionRead]:
+    timeline_query = (
+        select(
+            Set.reps,
+            Set.weight,
+            Workout.workout_date,
+            Workout.id,
+            func.row_number()
+            .over(
+                partition_by=(Set.reps, Workout.id),
+                order_by=(Set.weight.desc(), Workout.workout_date.desc()),
+            )
+            .label("row_number"),
+        )
+        .select_from(Set)
+        .join(WorkoutExercise)
+        .join(Workout)
+        .where(WorkoutExercise.exercise_id == exercise_id)
+        .where(Workout.user_id == user_id)
+    )
+    if date_from is not None:
+        timeline_query = timeline_query.where(Workout.workout_date >= date_from)
+    if date_to is not None:
+        timeline_query = timeline_query.where(Workout.workout_date <= date_to)
+    subq = timeline_query.subquery()
+    middle_query = select(
+        subq.c.reps,
+        subq.c.weight,
+        subq.c.workout_date,
+        subq.c.id,
+        subq.c.row_number,
+        func.max(subq.c.weight)
+        .over(partition_by=subq.c.reps, order_by=subq.c.workout_date, rows=(None, -1))
+        .label("prev_max"),
+    )
+    subq = middle_query.subquery()
+    result = await session.execute(
+        select(subq)
+        .where(
+            subq.c.row_number == 1,
+            or_(
+                subq.c.weight > subq.c.prev_max,
+                subq.c.prev_max.is_(None),
+            ),
+        )
+        .order_by(subq.c.workout_date.asc()),
+    )
+    grouped: dict[UUID, ExerciseProgressionRead] = {}
+    for row in result.all():
+        if row.id in grouped:
+            grouped[row.id].best_sets.append(
+                ExerciseBestSetRead(
+                    reps=row.reps,
+                    weight=row.weight,
+                    estimated_1rm=one_rep_max_formula(row.weight, row.reps),
+                )
+            )
+        else:
+            grouped[row.id] = ExerciseProgressionRead(
+                workout_id=row.id,
+                workout_date=row.workout_date,
+                best_sets=[
+                    ExerciseBestSetRead(
+                        reps=row.reps,
+                        weight=row.weight,
+                        estimated_1rm=one_rep_max_formula(row.weight, row.reps),
+                    )
+                ],
+            )
+    return list(grouped.values())

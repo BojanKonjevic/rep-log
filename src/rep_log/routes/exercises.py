@@ -84,6 +84,24 @@ async def get_exercise_progress(
     )
 
 
+@router.get(
+    "/{exercise_id}/timeline", response_model=Sequence[schemas.ExerciseProgressionRead]
+)
+async def get_exercise_timeline(
+    exercise_id: UUID,
+    date_from: date | None = Query(default=None),
+    date_to: date | None = Query(default=None),
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> Sequence[schemas.ExerciseProgressionRead]:
+    exercise = await crud.get_exercise(session, exercise_id, user.id)
+    if exercise is None:
+        raise HTTPException(status_code=404, detail="Exercise not found")
+    return await crud.get_exercise_timeline(
+        session, exercise_id, date_from, date_to, user.id
+    )
+
+
 @router.post("", response_model=schemas.ExerciseRead, status_code=201)
 async def create_exercise(
     exercise: schemas.ExerciseCreate,
