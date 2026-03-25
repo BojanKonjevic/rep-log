@@ -46,6 +46,14 @@ async def get_all_workouts(
     return workouts
 
 
+@router.get("/streak", response_model=int)
+async def get_streak(
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> int:
+    return await crud.get_streak(session, user.id)
+
+
 @router.get("/{workout_id}", response_model=schemas.WorkoutRead)
 async def get_workout(
     workout_id: UUID,

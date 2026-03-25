@@ -1,8 +1,8 @@
 from collections.abc import Sequence
-from datetime import date
+from datetime import date, timedelta
 from uuid import UUID
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, literal_column, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from rep_log.models import Exercise, MuscleGroup, Workout, WorkoutExercise
@@ -123,3 +123,43 @@ async def delete_workout(
     await session.delete(db_workout)
     await session.commit()
     return True
+
+
+async def get_streak(session: AsyncSession, user_id: UUID) -> int:
+    workout_weeks = (
+        select(
+            func.date_trunc(literal_column("'week'"), Workout.workout_date).label(
+                "week_start"
+            )
+        )
+        .where(Workout.user_id == user_id)
+        .distinct()
+        .subquery()
+    )
+
+    most_recent_week = (
+        await session.execute(
+            select(func.date_trunc(literal_column("'week'"), Workout.workout_date))
+            .where(Workout.user_id == user_id)
+            .order_by(
+                func.date_trunc(literal_column("'week'"), Workout.workout_date).desc()
+            )
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    if most_recent_week:
+        most_recent_week = most_recent_week.date()
+    current_week = date.today() - timedelta(days=date.today().weekday())
+    last_week = date.today() - timedelta(days=(date.today().weekday() + 7))
+    if most_recent_week != current_week and most_recent_week != last_week:
+        return 0
+
+    anchor = select(workout_weeks).order_by(workout_weeks.c.week_start.desc()).limit(1)
+    streak_cte = anchor.cte(recursive=True)
+    recursive_part = select(workout_weeks).where(
+        workout_weeks.c.week_start
+        == (streak_cte.c.week_start - text("interval '7 days'"))
+    )
+    streak_cte = streak_cte.union_all(recursive_part)
+    result = await session.execute(select(func.count()).select_from(streak_cte))
+    return result.scalar_one()
