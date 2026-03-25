@@ -6,7 +6,7 @@ from sqlalchemy import func, literal_column, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from rep_log.models import Exercise, MuscleGroup, Set, Workout, WorkoutExercise
-from rep_log.schemas import SetCountPerWorkout, WorkoutCreate, WorkoutUpdate
+from rep_log.schemas import SetCountPerWorkoutRead, WorkoutCreate, WorkoutUpdate
 
 
 async def get_all_workouts(
@@ -170,7 +170,7 @@ async def get_set_count_per_workout(
     user_id: UUID,
     date_from: date | None = None,
     date_to: date | None = None,
-) -> Sequence[SetCountPerWorkout]:
+) -> Sequence[SetCountPerWorkoutRead]:
     query = (
         select(func.count(Set.id).label("set_count"), Workout.id, Workout.workout_date)
         .select_from(Set)
@@ -187,10 +187,10 @@ async def get_set_count_per_workout(
         date_to_filter = Workout.workout_date <= date_to
         query = query.where(date_to_filter)
     rows = await session.execute(query)
-    all_counts: list[SetCountPerWorkout] = []
+    all_counts: list[SetCountPerWorkoutRead] = []
     for row in rows.all():
         all_counts.append(
-            SetCountPerWorkout(
+            SetCountPerWorkoutRead(
                 workout_id=row.id,
                 workout_date=row.workout_date,
                 set_count=row.set_count,

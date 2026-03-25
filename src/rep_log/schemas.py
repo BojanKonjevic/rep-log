@@ -147,10 +147,16 @@ class MuscleGroupVolumeRead(BaseModel):
     all_weeks: list[MuscleGroupWeekRead]
 
 
-class SetCountPerWorkout(BaseModel):
+class SetCountPerWorkoutRead(BaseModel):
     workout_id: UUID
     workout_date: date
     set_count: int
+
+
+class ExerciseFrequencyRead(BaseModel):
+    exercise_id: UUID
+    rank: int
+    exercise_count: int
 
 
 WorkoutRead.model_rebuild()

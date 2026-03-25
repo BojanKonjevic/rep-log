@@ -11,6 +11,7 @@ from rep_log.models import Exercise, MuscleGroup, Set, Workout, WorkoutExercise
 from rep_log.schemas import (
     ExerciseBestSetRead,
     ExerciseCreate,
+    ExerciseFrequencyRead,
     ExerciseProgressionRead,
     ExercisePRsRead,
     ExerciseUpdate,
@@ -241,3 +242,49 @@ async def get_exercise_progress(
                 ],
             )
     return list(grouped.values())
+
+
+async def get_exercise_frequency(
+    session: AsyncSession,
+    user_id: UUID,
+    limit: int | None,
+    date_from: date | None,
+    date_to: date | None,
+) -> Sequence[ExerciseFrequencyRead]:
+    exercise_count = func.count(WorkoutExercise.workout_id.distinct())
+    frequency_query = (
+        select(
+            Exercise.id.label("exercise_id"),
+            exercise_count.label("exercise_count"),
+            func.dense_rank().over(order_by=exercise_count.desc()).label("rank"),
+        )
+        .join(WorkoutExercise)
+        .join(Workout)
+        .where(Exercise.user_id == user_id)
+        .group_by(Exercise.id)
+    )
+    if date_from is not None:
+        frequency_query = frequency_query.where(Workout.workout_date >= date_from)
+    if date_to is not None:
+        frequency_query = frequency_query.where(Workout.workout_date <= date_to)
+    subq = frequency_query.subquery()
+    query = select(
+        subq.c.exercise_id,
+        subq.c.exercise_count,
+        subq.c.rank,
+    ).order_by(
+        subq.c.rank.asc(),
+        subq.c.exercise_count.desc(),
+        subq.c.exercise_id.asc(),
+    )
+    if limit is not None:
+        query = query.where(subq.c.rank <= limit)
+    rows = await session.execute(query)
+    return [
+        ExerciseFrequencyRead(
+            exercise_id=row.exercise_id,
+            rank=row.rank,
+            exercise_count=row.exercise_count,
+        )
+        for row in rows
+    ]

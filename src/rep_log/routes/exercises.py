@@ -29,6 +29,19 @@ async def get_all_exercises(
     return await crud.get_all_exercises(session, user.id, page, limit)
 
 
+@router.get("/frequency", response_model=Sequence[schemas.ExerciseFrequencyRead])
+async def get_exercise_frequency(
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+    limit: int | None = Query(default=None),
+    date_from: date | None = Query(default=None),
+    date_to: date | None = Query(default=None),
+) -> Sequence[schemas.ExerciseFrequencyRead]:
+    return await crud.get_exercise_frequency(
+        session, user.id, limit, date_from, date_to
+    )
+
+
 @router.get("/{exercise_id}", response_model=schemas.ExerciseRead)
 async def get_exercise(
     exercise_id: UUID,

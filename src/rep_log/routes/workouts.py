@@ -54,13 +54,13 @@ async def get_streak(
     return await crud.get_streak(session, user.id)
 
 
-@router.get("/setcounts", response_model=Sequence[schemas.SetCountPerWorkout])
+@router.get("/setcounts", response_model=Sequence[schemas.SetCountPerWorkoutRead])
 async def get_set_count_per_workout(
     session: AsyncSession = Depends(get_session),
     user: User = Depends(get_current_user),
     date_from: date | None = Query(default=None),
     date_to: date | None = Query(default=None),
-) -> Sequence[schemas.SetCountPerWorkout]:
+) -> Sequence[schemas.SetCountPerWorkoutRead]:
     return await crud.get_set_count_per_workout(session, user.id, date_from, date_to)
 
 
