@@ -5,8 +5,8 @@ from uuid import UUID
 from sqlalchemy import func, literal_column, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from rep_log.models import Exercise, MuscleGroup, Workout, WorkoutExercise
-from rep_log.schemas import WorkoutCreate, WorkoutUpdate
+from rep_log.models import Exercise, MuscleGroup, Set, Workout, WorkoutExercise
+from rep_log.schemas import SetCountPerWorkout, WorkoutCreate, WorkoutUpdate
 
 
 async def get_all_workouts(
@@ -163,3 +163,37 @@ async def get_streak(session: AsyncSession, user_id: UUID) -> int:
     streak_cte = streak_cte.union_all(recursive_part)
     result = await session.execute(select(func.count()).select_from(streak_cte))
     return result.scalar_one()
+
+
+async def get_set_count_per_workout(
+    session: AsyncSession,
+    user_id: UUID,
+    date_from: date | None = None,
+    date_to: date | None = None,
+) -> Sequence[SetCountPerWorkout]:
+    query = (
+        select(func.count(Set.id).label("set_count"), Workout.id, Workout.workout_date)
+        .select_from(Set)
+        .join(WorkoutExercise)
+        .join(Workout)
+        .where(Workout.user_id == user_id)
+        .group_by(Workout.id)
+        .order_by(Workout.workout_date)
+    )
+    if date_from is not None:
+        date_from_filter = Workout.workout_date >= date_from
+        query = query.where(date_from_filter)
+    if date_to is not None:
+        date_to_filter = Workout.workout_date <= date_to
+        query = query.where(date_to_filter)
+    rows = await session.execute(query)
+    all_counts: list[SetCountPerWorkout] = []
+    for row in rows.all():
+        all_counts.append(
+            SetCountPerWorkout(
+                workout_id=row.id,
+                workout_date=row.workout_date,
+                set_count=row.set_count,
+            )
+        )
+    return all_counts
