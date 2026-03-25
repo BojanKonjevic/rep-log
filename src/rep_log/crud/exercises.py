@@ -21,6 +21,10 @@ class MuscleGroupNotFound(Exception):
     pass
 
 
+def one_rep_max_formula(weight: Decimal, reps: int) -> Decimal:
+    return (weight * (1 + Decimal(reps) / Decimal(30))).quantize(Decimal("0.01"))
+
+
 async def get_all_exercises(
     session: AsyncSession, user_id: UUID, page: int = 1, limit: int = 10
 ) -> Sequence[Exercise]:
@@ -172,9 +176,7 @@ async def get_exercise_prs(
             ExercisePRsRead(
                 reps=row.reps,
                 weight=row.weight,
-                estimated_1rm=(
-                    row.weight * (1 + Decimal(row.reps) / Decimal(30))
-                ).quantize(Decimal("0.01")),
+                estimated_1rm=one_rep_max_formula(row.weight, row.reps),
                 achieved_on=row.workout_date,
                 workout_id=row.id,
             )
@@ -223,9 +225,7 @@ async def get_exercise_progress(
                 ExerciseBestSetRead(
                     reps=row.reps,
                     weight=row.weight,
-                    estimated_1rm=(
-                        row.weight * (1 + Decimal(row.reps) / Decimal(30))
-                    ).quantize(Decimal("0.01")),
+                    estimated_1rm=one_rep_max_formula(row.weight, row.reps),
                 )
             )
         else:
@@ -236,9 +236,7 @@ async def get_exercise_progress(
                     ExerciseBestSetRead(
                         reps=row.reps,
                         weight=row.weight,
-                        estimated_1rm=(
-                            row.weight * (1 + Decimal(row.reps) / Decimal(30))
-                        ).quantize(Decimal("0.01")),
+                        estimated_1rm=one_rep_max_formula(row.weight, row.reps),
                     )
                 ],
             )

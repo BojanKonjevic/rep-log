@@ -21,29 +21,29 @@ async def get_all_workouts(
     limit: int = 10,
 ) -> tuple[Sequence[Workout], int]:
     query = select(Workout).where(Workout.user_id == user_id)
-    countQuery = (
+    count_query = (
         select(func.count()).select_from(Workout).where(Workout.user_id == user_id)
     )
     if search:
-        searchFilter = or_(
+        search_filter = or_(
             Workout.name.ilike(f"%{search}%"), Workout.notes.ilike(f"%{search}%")
         )
-        query = query.where(searchFilter)
-        countQuery = countQuery.where(searchFilter)
+        query = query.where(search_filter)
+        count_query = count_query.where(search_filter)
     if date_from is not None:
         date_from_filter = Workout.workout_date >= date_from
         query = query.where(date_from_filter)
-        countQuery = countQuery.where(date_from_filter)
+        count_query = count_query.where(date_from_filter)
     if date_to is not None:
         date_to_filter = Workout.workout_date <= date_to
         query = query.where(date_to_filter)
-        countQuery = countQuery.where(date_to_filter)
+        count_query = count_query.where(date_to_filter)
     if exercise_ids:
-        exercisesFilter = Workout.exercises.any(
+        exercises_filter = Workout.exercises.any(
             WorkoutExercise.exercise_id.in_(exercise_ids)
         )
-        query = query.where(exercisesFilter)
-        countQuery = countQuery.where(exercisesFilter)
+        query = query.where(exercises_filter)
+        count_query = count_query.where(exercises_filter)
     if muscle_group_names:
         muscle_groups_filter = Workout.exercises.any(
             WorkoutExercise.exercise.has(
@@ -51,14 +51,14 @@ async def get_all_workouts(
             )
         )
         query = query.where(muscle_groups_filter)
-        countQuery = countQuery.where(muscle_groups_filter)
+        count_query = count_query.where(muscle_groups_filter)
     result = await session.execute(
         query.offset((page - 1) * limit)
         .limit(limit)
         .order_by(Workout.workout_date.desc(), Workout.id)
     )
-    countResult = await session.execute(countQuery)
-    count = countResult.scalar_one()
+    count_result = await session.execute(count_query)
+    count = count_result.scalar_one()
     return (result.scalars().all(), count)
 
 

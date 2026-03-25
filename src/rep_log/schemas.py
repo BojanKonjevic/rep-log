@@ -108,7 +108,7 @@ class SetCreate(SetBase):
 class SetUpdate(BaseModel):
     set_number: int | None = Field(default=None, gt=0)
     reps: int | None = Field(default=None, gt=0)
-    weight: float | None = Field(default=None, ge=0)
+    weight: Decimal | None = Field(default=None, ge=0)
     workout_exercise_id: UUID | None = None
 
 
