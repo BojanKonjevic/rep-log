@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends
+from collections.abc import Sequence
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from rep_log import schemas
@@ -20,3 +23,19 @@ async def create_template(
     session: AsyncSession = Depends(get_session),
 ) -> Template:
     return await crud.create_template(session, template, user.id)
+
+
+@router.get("", response_model=Sequence[schemas.TemplateRead])
+async def get_all_templates(
+    search: str | None = Query(default=None),
+    exercise_ids: Sequence[UUID] | None = Query(default=None),
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Sequence[Template]:
+    templates = await crud.get_all_templates(
+        session,
+        user.id,
+        search,
+        exercise_ids,
+    )
+    return templates
