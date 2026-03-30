@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from rep_log.models import Template, TemplateExercise
-from rep_log.schemas import TemplateCreate
+from rep_log.schemas import TemplateCreate, TemplateUpdate
 
 
 async def create_template(
@@ -47,3 +47,27 @@ async def get_template(
         select(Template).where(Template.id == template_id, Template.user_id == user_id)
     )
     return result.scalar_one_or_none()
+
+
+async def update_template(
+    session: AsyncSession,
+    template_id: UUID,
+    template_update: TemplateUpdate,
+    user_id: UUID,
+) -> Template | None:
+    db_template = (
+        await session.execute(
+            select(Template).where(
+                Template.id == template_id,
+                Template.user_id == user_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if not db_template:
+        return None
+    update_data = template_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_template, field, value)
+    await session.commit()
+    await session.refresh(db_template)
+    return db_template

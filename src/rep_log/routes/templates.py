@@ -51,3 +51,18 @@ async def get_template(
     if template is None:
         raise HTTPException(status_code=404, detail="Template not found")
     return template
+
+
+@router.patch("/{template_id}", response_model=schemas.TemplateRead)
+async def update_template(
+    template_id: UUID,
+    template_update: schemas.TemplateUpdate,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Template:
+    updated_template = await crud.update_template(
+        session, template_id, template_update, user.id
+    )
+    if not updated_template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    return updated_template

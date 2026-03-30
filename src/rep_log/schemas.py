@@ -168,7 +168,7 @@ class TemplateCreate(TemplateBase):
 
 
 class TemplateUpdate(BaseModel):
-    name: str | None = Field(min_length=1, max_length=255)
+    name: str | None = Field(default=None, min_length=1, max_length=255)
 
 
 class TemplateRead(OrmBase, TemplateBase):
