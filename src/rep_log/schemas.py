@@ -159,6 +159,43 @@ class ExerciseFrequencyRead(BaseModel):
     exercise_count: int
 
 
+class TemplateBase(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+
+
+class TemplateCreate(TemplateBase):
+    pass
+
+
+class TemplateUpdate(BaseModel):
+    name: str | None = Field(min_length=1, max_length=255)
+
+
+class TemplateRead(OrmBase, TemplateBase):
+    id: UUID
+    exercises: list["TemplateExerciseRead"] = Field(default_factory=list)
+
+
+class TemplateExerciseBase(BaseModel):
+    order: int = Field(gt=0)
+
+
+class TemplateExerciseCreate(TemplateExerciseBase):
+    exercise_id: UUID
+
+
+class TemplateExerciseUpdate(BaseModel):
+    order: int | None = Field(default=None, gt=0)
+    exercise_id: UUID | None = None
+
+
+class TemplateExerciseRead(OrmBase, TemplateExerciseBase):
+    id: UUID
+    template_id: UUID
+    exercise: ExerciseRead
+
+
 WorkoutRead.model_rebuild()
 WorkoutExerciseRead.model_rebuild()
+TemplateExerciseRead.model_rebuild()
 ExerciseRead.model_rebuild()
