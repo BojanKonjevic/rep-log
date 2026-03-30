@@ -78,3 +78,24 @@ async def update_template_exercise(
         raise ValueError("An exercise already exists at that position") from err
     await session.refresh(db_template_exercise)
     return db_template_exercise
+
+
+async def delete_template_exercise(
+    session: AsyncSession, template_id: UUID, template_exercise_id: UUID, user_id: UUID
+) -> bool:
+    db_template_exercise = (
+        await session.execute(
+            select(TemplateExercise)
+            .join(Template)
+            .where(
+                TemplateExercise.id == template_exercise_id,
+                TemplateExercise.template_id == template_id,
+                Template.user_id == user_id,
+            ),
+        )
+    ).scalar_one_or_none()
+    if not db_template_exercise:
+        return False
+    await session.delete(db_template_exercise)
+    await session.commit()
+    return True
