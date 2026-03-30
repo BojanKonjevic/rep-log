@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from uuid import UUID
 
 from sqlalchemy import select
@@ -83,3 +84,39 @@ async def delete_set(session: AsyncSession, set_id: UUID, user_id: UUID) -> bool
     await session.delete(db_set)
     await session.commit()
     return True
+
+
+async def bulk_create_set(
+    session: AsyncSession,
+    sets_create: Sequence[SetCreate],
+    user_id: UUID,
+) -> Sequence[Set]:
+    sets_to_add: list[Set] = []
+    for set_create in sets_create:
+        workout_exercise = (
+            await session.execute(
+                select(WorkoutExercise)
+                .join(Workout)
+                .where(
+                    WorkoutExercise.id == set_create.workout_exercise_id,
+                    Workout.user_id == user_id,
+                )
+            )
+        ).scalar_one_or_none()
+        if not workout_exercise:
+            raise LookupError("Workout exercise not found")
+        sets_to_add.append(
+            Set(
+                set_number=set_create.set_number,
+                reps=set_create.reps,
+                weight=set_create.weight,
+                workout_exercise_id=set_create.workout_exercise_id,
+            )
+        )
+    session.add_all(sets_to_add)
+    try:
+        await session.commit()
+    except IntegrityError as err:
+        await session.rollback()
+        raise ValueError("Set already exists at that position") from err
+    return sets_to_add

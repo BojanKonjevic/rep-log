@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -24,6 +25,24 @@ async def create_set(
 ) -> Set:
     try:
         return await crud.create_set(session, set_create, user.id)
+    except LookupError as err:
+        raise HTTPException(status_code=404, detail=str(err)) from err
+    except ValueError as err:
+        raise HTTPException(status_code=409, detail=str(err)) from err
+
+
+@router.post(
+    "/bulk",
+    response_model=Sequence[schemas.SetRead],
+    status_code=201,
+)
+async def bulk_create_set(
+    sets_create: Sequence[schemas.SetCreate],
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Sequence[Set]:
+    try:
+        return await crud.bulk_create_set(session, sets_create, user.id)
     except LookupError as err:
         raise HTTPException(status_code=404, detail=str(err)) from err
     except ValueError as err:
