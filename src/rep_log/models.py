@@ -95,6 +95,9 @@ class Exercise(DBModel):
     workout_exercises: Mapped[list["WorkoutExercise"]] = relationship(
         back_populates="exercise"
     )
+    template_exercises: Mapped[list["TemplateExercise"]] = relationship(
+        back_populates="exercise"
+    )
     muscle_groups: Mapped[list["MuscleGroup"]] = relationship(
         secondary=exercise_muscle_group, back_populates="exercises", lazy="selectin"
     )
@@ -142,3 +145,32 @@ class Set(DBModel):
     reps: Mapped[int] = mapped_column(Integer)
     weight: Mapped[Decimal] = mapped_column(Numeric(precision=6, scale=2))
     workout_exercise: Mapped["WorkoutExercise"] = relationship(back_populates="sets")
+
+
+class Template(DBModel):
+    __tablename__ = "templates"
+    __table_args__ = (UniqueConstraint("user_id", "name"),)
+    name: Mapped[str] = mapped_column(String(255), index=True)
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="CASCADE")
+    )
+    exercises: Mapped[list["TemplateExercise"]] = relationship(
+        back_populates="template",
+        cascade="all, delete-orphan",
+        order_by="TemplateExercise.order",
+        lazy="selectin",
+    )
+
+
+class TemplateExercise(DBModel):
+    __tablename__ = "template_exercises"
+    __table_args__ = (UniqueConstraint("template_id", "order"),)
+    template_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("templates.id", ondelete="CASCADE")
+    )
+    exercise_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("exercises.id", ondelete="CASCADE")
+    )
+    order: Mapped[int] = mapped_column(Integer)
+    template: Mapped["Template"] = relationship(back_populates="exercises")
+    exercise: Mapped["Exercise"] = relationship(back_populates="template_exercises")
