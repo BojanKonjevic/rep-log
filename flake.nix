@@ -26,7 +26,6 @@
           sqlalchemy
           alembic
           asyncpg
-          aiosqlite
           greenlet
           pydantic-settings
 

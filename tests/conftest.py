@@ -4,8 +4,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from rep_log.database import Base, get_session
 from rep_log.main import app
+from rep_log.models import MuscleGroup
+from rep_log.seed import MUSCLE_GROUPS
 
-TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+TEST_DATABASE_URL = "postgresql+asyncpg:///rep_log_test"
 TEST_USER = {"email": "test@example.com", "password": "testpassword123"}
 
 
@@ -19,6 +21,9 @@ async def session() -> AsyncSession:  # type: ignore[misc]
     factory = async_sessionmaker(engine, expire_on_commit=False)
 
     async with factory() as s:
+        # Seed muscle groups — create_user expects these to exist
+        s.add_all([MuscleGroup(name=name) for name in MUSCLE_GROUPS])
+        await s.commit()
         yield s
 
     async with engine.begin() as conn:
@@ -47,9 +52,7 @@ async def anon_client(session: AsyncSession) -> AsyncClient:  # type: ignore[mis
 
 @pytest.fixture
 async def client(session: AsyncSession) -> AsyncClient:  # type: ignore[misc]
-    """Authenticated client — pre-registered and logged in as TEST_USER.
-
-    Uncomment and implement once auth routes are in place:
+    """Authenticated client — pre-registered and logged in as TEST_USER."""
 
     async def override_get_session() -> AsyncSession:  # type: ignore[misc]
         yield session
@@ -67,20 +70,6 @@ async def client(session: AsyncSession) -> AsyncClient:  # type: ignore[misc]
         )
         token = token_resp.json()["access_token"]
         ac.headers["Authorization"] = f"Bearer {token}"
-        yield ac
-
-    app.dependency_overrides.clear()
-    """
-
-    async def override_get_session() -> AsyncSession:  # type: ignore[misc]
-        yield session
-
-    app.dependency_overrides[get_session] = override_get_session
-
-    async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url="http://test",
-    ) as ac:
         yield ac
 
     app.dependency_overrides.clear()
