@@ -8,7 +8,7 @@ from rep_log import schemas
 from rep_log.crud import templates as crud
 from rep_log.database import get_session
 from rep_log.dependencies import get_current_user
-from rep_log.models import Template, User
+from rep_log.models import Template, User, Workout
 
 router = APIRouter(
     prefix="/templates",
@@ -23,6 +23,24 @@ async def create_template(
     session: AsyncSession = Depends(get_session),
 ) -> Template:
     return await crud.create_template(session, template, user.id)
+
+
+@router.post(
+    "/{template_id}/instantiate", response_model=schemas.WorkoutRead, status_code=201
+)
+async def create_workout_from_template(
+    template_id: UUID,
+    workout: schemas.WorkoutCreate,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Workout:
+    try:
+        created_workout = await crud.create_workout_from_template(
+            session, user.id, template_id, workout
+        )
+    except LookupError as err:
+        raise HTTPException(status_code=404, detail=str(err)) from err
+    return created_workout
 
 
 @router.get("", response_model=Sequence[schemas.TemplateRead])

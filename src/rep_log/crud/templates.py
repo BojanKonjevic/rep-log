@@ -4,8 +4,8 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from rep_log.models import Template, TemplateExercise
-from rep_log.schemas import TemplateCreate, TemplateUpdate
+from rep_log.models import Template, TemplateExercise, Workout, WorkoutExercise
+from rep_log.schemas import TemplateCreate, TemplateUpdate, WorkoutCreate
 
 
 async def create_template(
@@ -88,3 +88,36 @@ async def delete_template(
     await session.delete(db_template)
     await session.commit()
     return True
+
+
+async def create_workout_from_template(
+    session: AsyncSession, user_id: UUID, template_id: UUID, workout: WorkoutCreate
+) -> Workout:
+    template = (
+        await session.execute(
+            select(Template).where(
+                Template.id == template_id, Template.user_id == user_id
+            )
+        )
+    ).scalar_one_or_none()
+    if not template:
+        raise LookupError("Template not found")
+    db_workout = Workout(
+        name=workout.name,
+        workout_date=workout.workout_date,
+        notes=workout.notes,
+        user_id=user_id,
+    )
+    exercises = template.exercises
+    for exercise in exercises:
+        db_workout.exercises.append(
+            WorkoutExercise(
+                workout=db_workout,
+                exercise_id=exercise.exercise_id,
+                order=exercise.order,
+            )
+        )
+    session.add(db_workout)
+    await session.commit()
+    await session.refresh(db_workout)
+    return db_workout
