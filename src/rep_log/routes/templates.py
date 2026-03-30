@@ -66,3 +66,14 @@ async def update_template(
     if not updated_template:
         raise HTTPException(status_code=404, detail="Template not found")
     return updated_template
+
+
+@router.delete("/{template_id}", status_code=204)
+async def delete_template(
+    template_id: UUID,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    deleted = await crud.delete_template(session, template_id, user.id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Template not found")

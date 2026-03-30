@@ -71,3 +71,20 @@ async def update_template(
     await session.commit()
     await session.refresh(db_template)
     return db_template
+
+
+async def delete_template(
+    session: AsyncSession, template_id: UUID, user_id: UUID
+) -> bool:
+    db_template = (
+        await session.execute(
+            select(Template).where(
+                Template.id == template_id, Template.user_id == user_id
+            )
+        )
+    ).scalar_one_or_none()
+    if not db_template:
+        return False
+    await session.delete(db_template)
+    await session.commit()
+    return True
