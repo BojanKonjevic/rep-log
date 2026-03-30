@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from rep_log import schemas
@@ -39,3 +39,15 @@ async def get_all_templates(
         exercise_ids,
     )
     return templates
+
+
+@router.get("/{template_id}", response_model=schemas.TemplateRead)
+async def get_template(
+    template_id: UUID,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Template | None:
+    template = await crud.get_template(session, template_id, user.id)
+    if template is None:
+        raise HTTPException(status_code=404, detail="Template not found")
+    return template

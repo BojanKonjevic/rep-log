@@ -38,3 +38,12 @@ async def get_all_templates(
         query = query.where(exercises_filter)
     result = await session.execute(query)
     return result.scalars().all()
+
+
+async def get_template(
+    session: AsyncSession, template_id: UUID, user_id: UUID
+) -> Template | None:
+    result = await session.execute(
+        select(Template).where(Template.id == template_id, Template.user_id == user_id)
+    )
+    return result.scalar_one_or_none()

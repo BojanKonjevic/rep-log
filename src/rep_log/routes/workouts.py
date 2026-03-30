@@ -72,7 +72,7 @@ async def get_workout(
 ) -> Workout | None:
     workout = await crud.get_workout(session, workout_id, user.id)
     if workout is None:
-        raise HTTPException(status_code=404, detail="workout not found")
+        raise HTTPException(status_code=404, detail="Workout not found")
     return workout
 
 
