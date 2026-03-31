@@ -1,5 +1,5 @@
 {
-  description = "rep-log — Python development environment";
+  description = "rep-log — Python + React development environment";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -52,6 +52,10 @@
           pkgs.just
           pkgs.ripgrep
           pkgs.fd
+
+          # frontend
+          pkgs.nodejs_22
+          pkgs.nodePackages.npm
         ];
 
         shellHook = ''
@@ -62,7 +66,6 @@
           if [ -f .pre-commit-config.yaml ]; then
             pre-commit install >/dev/null 2>&1 || true
           fi
-
 
           echo "Commands:"
           echo "  just test                    run tests"
@@ -75,6 +78,8 @@
           echo "  just upgrade                 apply migrations"
           echo "  just downgrade               roll back one step"
           echo "  just db-drop                 delete the local database"
+          echo "  just fe                      run frontend dev server"
+          echo "  just fe-build                build frontend"
           echo
         '';
       };
