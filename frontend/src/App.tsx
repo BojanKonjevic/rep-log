@@ -5,6 +5,7 @@ import AppShell from '@/components/layout/AppShell'
 import DashboardPage from '@/pages/DashboardPage'
 import WorkoutsPage from '@/pages/WorkoutsPage'
 import ExercisesPage from '@/pages/ExercisesPage'
+import WorkoutDetailPage from '@/pages/WorkoutDetailPage'
 
 function App() {
   const { user, loading } = useAuth()
@@ -26,6 +27,7 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/workouts" element={<WorkoutsPage />} />
+          <Route path="/workouts/:id" element={<WorkoutDetailPage />} />
           <Route path="/exercises" element={<ExercisesPage />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
